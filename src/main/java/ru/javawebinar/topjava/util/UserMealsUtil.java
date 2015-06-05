@@ -22,19 +22,16 @@ public class UserMealsUtil {
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,10,0), "Завтрак", 500),
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,13,0), "Обед", 500),
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,20,0), "Ужин", 500),
-                new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,10,0), "Завтрак", 500),
-                new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,13,0), "Обед", 500),
-                new UserMeal(LocalDateTime.of(2015, Month.MAY, 30,20,0), "Ужин", 500)
+                new UserMeal(LocalDateTime.of(2015, Month.MAY, 31,10,0), "Завтрак", 700),
+                new UserMeal(LocalDateTime.of(2015, Month.MAY, 31,13,0), "Обед", 700),
+                new UserMeal(LocalDateTime.of(2015, Month.MAY, 31,20,0), "Ужин", 700)
         );
 
         List<UserMealWithExceed> withExceedList = getFilteredMealsWithExceeded(mealList, LocalTime.of(7, 0), LocalTime.of(12,0), 2000);
 
-        int countMealsWithExceed = 0;
         for (UserMealWithExceed meal : withExceedList) {
-            if (meal.isExceed()) countMealsWithExceed++;
+            System.out.println(meal.getDescription() + " " + (meal.isExceed() ? "exceeded" : "not exceeded"));
         }
-
-        System.out.println("there are " + countMealsWithExceed + " meals with exceed.");
 
     }
 
@@ -46,17 +43,13 @@ public class UserMealsUtil {
 
         // calculate calories for each day and store them in the map
         for (UserMeal meal : mealList) {
+
             LocalDate dateOfMeal = meal.getDateTime().toLocalDate();
-            if (mapDaysToCalories.containsKey(dateOfMeal)) {
-                int accumulatedCalories = mapDaysToCalories.get(dateOfMeal);
-                accumulatedCalories += meal.getCalories();
-                mapDaysToCalories.put(dateOfMeal, accumulatedCalories);
-            } else {
-                mapDaysToCalories.put(meal.getDateTime().toLocalDate(), meal.getCalories());
-            }
+            Integer accumulatedCalories = mapDaysToCalories.get(dateOfMeal);
+
+            if (accumulatedCalories != null) mapDaysToCalories.put(dateOfMeal, meal.getCalories() + accumulatedCalories);
+            else mapDaysToCalories.put(dateOfMeal, meal.getCalories());
         }
-
-
 
         // init list for meals with exceeded calories
         ArrayList<UserMealWithExceed> exceededMeals = new ArrayList<>();
@@ -67,23 +60,14 @@ public class UserMealsUtil {
             LocalDate dateOfMeal = meal.getDateTime().toLocalDate();
             LocalTime timeOfMeal = meal.getDateTime().toLocalTime();
 
-            if (mapDaysToCalories.get(dateOfMeal) > caloriesPerDay // exceeded calories check
-                    && TimeUtil.isBetween(timeOfMeal, startTime, endTime)) { // time range check
+            if (TimeUtil.isBetween(timeOfMeal, startTime, endTime)) { // time range check
                 exceededMeals.add(
                         new UserMealWithExceed(
                                 meal.getDateTime(),
                                 meal.getDescription(),
                                 meal.getCalories(),
-                                true
-                        )
-                );
-            }  else {
-                exceededMeals.add(
-                        new UserMealWithExceed(
-                                meal.getDateTime(),
-                                meal.getDescription(),
-                                meal.getCalories(),
-                                false
+                                // exceeded calories check
+                                (mapDaysToCalories.get(dateOfMeal) > caloriesPerDay)
                         )
                 );
             }
